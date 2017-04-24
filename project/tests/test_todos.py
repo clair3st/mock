@@ -1,7 +1,7 @@
 """Testing an api."""
 
 import requests
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 from project.services import get_todos
 
 
@@ -70,3 +70,42 @@ def test_getting_todos_again_again():
 
     # If the request is sent successfully, expect a response to be returned.
     assert response is not None
+
+
+@patch('project.services.requests.get')
+def test_getting_todos_when_response_is_ok(mock_get):
+    """Use a mock to test functionality of todos.
+
+    whenever the return_value is added to a mock, that mock is modified to be
+    run as a function, and by default it returns another mock object. 
+    """
+    todos = [{
+        'userId': 1,
+        'id': 1,
+        'title': 'Make the bed',
+        'completed': False
+    }]
+
+    # Configure the mock to return a response with an OK status code.
+    mock_get.return_value = Mock(ok=True)
+    # Also, the mock should have a `json()` method that returns list of todos.
+    mock_get.return_value.json.return_value = todos
+
+    # Call the service, which will send a request to the server.
+    response = get_todos()
+
+    # If the request is sent successfully, expect a response to be returned.
+    assert response.json() == todos
+
+
+@patch('project.services.requests.get')
+def test_getting_todos_when_response_is_not_ok(mock_get):
+    """Test negative."""
+    # Configure the mock to not return a response with an OK status code.
+    mock_get.return_value.ok = False
+
+    # Call the service, which will send a request to the server.
+    response = get_todos()
+
+    # If the response contains an error, I should get no todos.
+    assert response is None
